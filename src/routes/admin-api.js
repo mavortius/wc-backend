@@ -1,6 +1,8 @@
 const express = require('express');
 const api = express.Router();
 const Match = require('../models/match');
+const auth = require('express-jwt');
+const guard = require('express-jwt-permissions')();
 
 const updateScore = async (matchId, teamId) => {
     try {
@@ -26,12 +28,14 @@ const updateScore = async (matchId, teamId) => {
 
 api
     .route('/admin/match/:id?')
-    .post((req, res, next) => {
-        const match = new Match(req.body);
-        match.save()
-            .then(data => res.json(data))
-            .catch(err => next(err));
-    })
+    .post(auth({ secret: 's3cret' }),
+        guard.check('admin:create:match'),
+        (req, res, next) => {
+            const match = new Match(req.body);
+            match.save()
+                .then(data => res.json(data))
+                .catch(err => next(err));
+        })
     .put((req, res, next) => {
         const matchId = req.params.id;
         const teamId = req.body.teamId;
